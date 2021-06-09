@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+  labels:
+    app.k8s.io/name: nextcloud
+spec:
+  selector:
+    matchLabels:
+      app.k8s.io/name: nextcloud
+  template:
+    metadata:
+      labels:
+        app.k8s.io/name: nextcloud
+    spec:
+      containers:
+      - name: nextcloud
+        image: nginx:latest
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+        volumeMounts:
+          - mountPath: /var/www/html/
+            name: nextcloudvol
+        env:
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysql-credentials
+                key: databaseName
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-credentials
+                key: mysqlUsername
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-credentials
+                key: mysqlPassword
+          - name: MYSQL_HOST
+            value: dbsvc
+          - name: NEXTCLOUD_ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-credentials
+                key: mysqlUsername
+          - name: NEXTCLOUD_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-credentials
+                key: mysqlPassword
+          - name: NEXTCLOUD_TRUSTED_DOMAINS
+            value: '*'
+      volumes:
+        - name: nextcloudvol
+          persistentVolumeClaim:
+            claimName: nextcloudvol
